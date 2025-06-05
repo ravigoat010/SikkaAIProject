@@ -73,4 +73,10 @@ That’s it! At this point, your Clover sandbox account and application are full
    ```
    Visit http://localhost:3000
 
+   ## How to use app
+   1. press connect oauth
+   2. you will be redirected to clover login
+   3. login and you will be redirected back to application
+   4. create order, process payments, etc
+
 
