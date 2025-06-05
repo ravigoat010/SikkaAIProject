@@ -78,5 +78,34 @@ That’s it! At this point, your Clover sandbox account and application are full
    2. you will be redirected to clover login
    3. login and you will be redirected back to application
    4. create order, process payments, etc
+  
+## Api endpoints in server
+
+### OAuth Integration  
+- `GET /oauth` - OAuth authorization page
+- `GET /oauth/callback` - OAuth callback handler
+- `POST /api/oauth/token` - Exchange auth code for tokens
+- `POST /api/oauth/refresh` - Refresh expired tokens
+
+### Order Management
+- `POST /api/orders` - Create atomic order with line items
+  ```json
+  { "items": [{"name": "Coffee", "price": 5.99, "quantity": 2}] }
+  ```
+- `GET /api/orders/:id` - Get order details
+
+### Line Items
+- `POST /api/orders/:id/line_items` - Add line item to order
+- `DELETE /api/orders/:id/line_items/:itemId` - Remove line item
+
+### Payments  
+- `POST /api/orders/:id/pay` - Process payment for order
+  ```json
+  { "cardToken": "test_token_or_real_token" }
+  ```
+
+### Status & History
+- `GET /api/orders/:id/payments` - Get payment status for order
+- `GET /api/transactions` - Get transaction history
 
 
