@@ -87,6 +87,12 @@ That’s it! At this point, your Clover sandbox account and application are full
 - `POST /api/oauth/token` - Exchange auth code for tokens
 - `POST /api/oauth/refresh` - Refresh expired tokens
 
+## OAuth Process
+- The user clicks “Connect” in the frontend, which redirects them to Clover’s authorization URL; after logging in and approving, Clover sends back an authorization code to your `/oauth/callback` endpoint.
+- In `/oauth/callback`, you capture the `code` (and `merchant_id`) and immediately redirect back to your frontend with those query parameters.
+- The frontend then POSTs that `code` and `merchant_id` to your `/api/oauth/token` endpoint, where the server exchanges the code (along with your `APP_ID` and `APP_SECRET`) for an access token and a refresh token.
+- Once you have a valid access token, you include it in the `Authorization: Bearer <token>` header on subsequent API calls (e.g., fetching merchant info or creating orders); when it expires, you send the refresh token to `/api/oauth/refresh` to obtain a new access token.
+
 ### Order Management
 - `POST /api/orders` - Create atomic order with line items
   ```json
@@ -107,5 +113,7 @@ That’s it! At this point, your Clover sandbox account and application are full
 ### Status & History
 - `GET /api/orders/:id/payments` - Get payment status for order
 - `GET /api/transactions` - Get transaction history
+
+
 
 
