@@ -60,13 +60,20 @@ That’s it! At this point, your Clover sandbox account and application are full
    PORT=3000
    ```
 
-3. **Get Clover Credentials**
+3. **Locate the configuration object in `oauth.js`:**  
+   ```javascript
+   const OAUTH_CONFIG = {
+       clientId: 'YOUR_APP_ID', // Put your App ID here
+   };
+
+
+4. **Get Clover Credentials**
    - Create account at [Clover Developer Dashboard](https://sandbox.dev.clover.com/)
    - Create test app → get `APP_ID` and `APP_SECRET`
    - Create test merchant → get `MERCHANT_ID`
    - Generate API token → get `ACCESS_TOKEN`
 
-4. **Run Application**
+5. **Run Application**
    From the main directory run
    ```bash
    npm start
