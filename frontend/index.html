@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clover Payment Gateway - Checkout</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-credit-card"></i> Clover Payment Gateway</h1>
+                <p>Complete atomic orders workflow with OAuth2 authentication</p>
+                
+                <!-- Authentication Status -->
+                <div class="auth-section">
+                    <div class="status-indicator" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Checking connection...</span>
+                    </div>
+                    <div class="auth-controls">
+                        <button id="oauthBtn" class="btn btn-auth" style="display: none;">
+                            <i class="fas fa-shield-alt"></i>
+                            Connect with OAuth
+                        </button>
+                        <button id="disconnectBtn" class="btn btn-auth btn-danger" style="display: none;">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Order Creation Section -->
+            <section class="order-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-shopping-cart"></i> Create Order</h2>
+                        <p>Add line items to create a new order</p>
+                    </div>
+                    
+                    <!-- Add Line Item Form -->
+                    <div class="line-item-form">
+                        <h3><i class="fas fa-plus"></i> Add Line Item</h3>
+                        <form id="lineItemForm" class="item-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="itemName">
+                                        <i class="fas fa-tag"></i>
+                                        Item Name
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="itemName" 
+                                        name="itemName" 
+                                        placeholder="e.g., Coffee, Burger, T-Shirt"
+                                        required
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="itemPrice">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        Price (USD)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="itemPrice" 
+                                        name="itemPrice" 
+                                        step="0.01" 
+                                        min="0.01" 
+                                        placeholder="0.00"
+                                        required
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="itemQuantity">
+                                        <i class="fas fa-hashtag"></i>
+                                        Quantity
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="itemQuantity" 
+                                        name="itemQuantity" 
+                                        min="1" 
+                                        value="1"
+                                        required
+                                    >
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-plus"></i>
+                                Add Item
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Line Items List -->
+                    <div class="line-items-section">
+                        <h3><i class="fas fa-list"></i> Order Items</h3>
+                        <div id="lineItemsList" class="line-items-list">
+                            <div class="empty-state">
+                                <i class="fas fa-shopping-basket"></i>
+                                <p>No items added yet</p>
+                            </div>
+                        </div>
+                        <div class="order-total">
+                            <strong>Total: $<span id="orderTotal">0.00</span></strong>
+                        </div>
+                    </div>
+
+                    <!-- Create Order Button -->
+                    <div class="order-actions">
+                        <button id="createOrderBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-shopping-cart"></i>
+                            Create Order
+                        </button>
+                        <button id="clearItemsBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order Details Section -->
+            <section class="order-details-section" id="orderDetailsSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-invoice"></i> Order Details</h2>
+                        <p>Review your order and proceed to payment</p>
+                    </div>
+                    
+                    <div id="orderDetails" class="order-details">
+                        <!-- Order details will be populated here -->
+                    </div>
+
+                    <!-- Payment Section -->
+                    <div class="payment-section">
+                        <h3><i class="fas fa-credit-card"></i> Payment</h3>
+                        <form id="paymentForm" class="payment-form">
+                            <div class="form-group">
+                                <label for="cardToken">
+                                    <i class="fas fa-credit-card"></i>
+                                    Card Token (Test)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="cardToken" 
+                                    name="cardToken" 
+                                    placeholder="Leave empty for test token"
+                                >
+                                <small class="form-help">
+                                    For testing, leave empty to use default test token
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="payButton">
+                                <i class="fas fa-lock"></i>
+                                Process Payment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payment Status Section -->
+            <section class="status-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-info-circle"></i> Payment Status</h2>
+                        <button id="refreshStatus" class="btn btn-secondary" style="display: none;">
+                            <i class="fas fa-refresh"></i>
+                            Refresh Status
+                        </button>
+                    </div>
+                    
+                    <div id="paymentStatus" class="status-content">
+                        <div class="status-placeholder">
+                            <i class="fas fa-clock"></i>
+                            <p>No payment initiated yet</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transaction History Section -->
+            <section class="history-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-history"></i> Transaction History</h2>
+                        <button id="refreshHistory" class="btn btn-secondary">
+                            <i class="fas fa-refresh"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="transactionHistory" class="history-content">
+                        <div class="status-placeholder">
+                            <i class="fas fa-receipt"></i>
+                            <p>No transactions yet</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Processing...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Clover Payment Integration Demo. Built according to Clover API specifications.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 

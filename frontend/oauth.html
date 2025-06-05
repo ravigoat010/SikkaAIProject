@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clover OAuth Authentication - Payment Gateway</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* OAuth-specific styles */
+        .oauth-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .oauth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .oauth-header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .oauth-header p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .oauth-steps {
+            margin-bottom: 30px;
+        }
+
+        .oauth-step {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .oauth-step.active {
+            display: block;
+        }
+
+        .step-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .step-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .step-description {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .status-indicator.disconnected {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .status-indicator.connecting {
+            background: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ffcc02;
+        }
+
+        .status-indicator.connected {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .btn-oauth {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .merchant-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .detail-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .value {
+            color: #6c757d;
+            font-family: monospace;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toast {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+        }
+
+        .toast.success {
+            background: #27ae60;
+        }
+
+        .toast.error {
+            background: #e74c3c;
+        }
+
+        .toast.warning {
+            background: #f39c12;
+        }
+
+        .toast.info {
+            background: #3498db;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .oauth-info {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .oauth-info h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .oauth-info p {
+            color: #0c5460;
+            margin: 5px 0;
+        }
+
+        .redirect-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .oauth-container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .step-title {
+                font-size: 20px;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="oauth-container">
+        <div class="oauth-header">
+            <h1><i class="fas fa-shield-alt"></i> Clover OAuth Authentication</h1>
+            <p>Secure connection to your Clover merchant account</p>
+        </div>
+
+        <!-- Authentication Status -->
+        <div id="authStatus" class="status-indicator disconnected">
+            <i class="fas fa-times-circle"></i>
+            <span>Not Connected</span>
+        </div>
+
+        <!-- OAuth Steps -->
+        <div class="oauth-steps">
+            <!-- Step 1: Connect to Clover -->
+            <div id="step1" class="oauth-step active">
+                <div class="step-header">
+                    <div class="step-title">Connect to Clover</div>
+                    <div class="step-description">Authenticate with your Clover merchant account</div>
+                </div>
+
+                <button id="connectBtn" class="btn-oauth btn-primary">
+                    <i class="fas fa-link"></i> Connect to Clover
+                </button>
+            </div>
+
+            <!-- Step 2: Processing -->
+            <div id="step2" class="oauth-step">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Processing Authentication</div>
+                    <div class="step-description">Exchanging authorization code for access tokens</div>
+                </div>
+
+                <div class="redirect-info">
+                    <div class="loading-spinner"></div>
+                    <h4>Please wait...</h4>
+                    <p>Processing your authentication with Clover.</p>
+                    <p>This may take a few moments.</p>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step3" class="oauth-step">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Successfully Connected</div>
+                    <div class="step-description">Your account is now linked and ready to use</div>
+                </div>
+
+                <div id="merchantInfo" class="merchant-details">
+                    <!-- Merchant details will be populated by JavaScript -->
+                </div>
+
+                <button id="disconnectBtn" class="btn-oauth btn-danger">
+                    <i class="fas fa-unlink"></i> Disconnect Account
+                </button>
+            </div>
+
+            <!-- Step 4: Error -->
+            <div id="step4" class="oauth-step">
+                <div class="step-header">
+                    <div class="step-number">!</div>
+                    <div class="step-title">Authentication Error</div>
+                    <div class="step-description">There was a problem connecting to your account</div>
+                </div>
+
+                <div class="status-indicator disconnected">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="errorMessage">Authentication failed</span>
+                </div>
+
+                <button id="retryBtn" class="btn-oauth btn-secondary">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer Information -->
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+            <p style="color: #6c757d; font-size: 14px;">
+                <i class="fas fa-lock"></i> Secured by Clover OAuth 2.0 | 
+                <a href="index.html" style="color: #3498db; text-decoration: none;">← Back to Payment Gateway</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Load OAuth JavaScript -->
+    <script src="oauth.js"></script>
+</body>
+</html> 
