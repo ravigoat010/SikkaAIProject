@@ -29,18 +29,18 @@ const steps = {
 };
 
 // Initialize OAuth Page
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('🔐 OAuth v2 Page Initialized');
-    
+
     // Check if we're returning from OAuth callback
     checkOAuthCallback();
-    
+
     // Check existing authentication
     checkExistingAuth();
-    
+
     // Setup event listeners
     setupEventListeners();
-    
+
     // Setup token refresh timer
     setupTokenRefresh();
 });
@@ -59,7 +59,7 @@ function checkOAuthCallback() {
     const error = urlParams.get('error');
     const state = urlParams.get('state');
     const merchantId = urlParams.get('merchant_id');
-    
+
     console.log('📝 OAuth v2 callback parameters:', {
         code: code ? 'present' : 'missing',
         merchantId,
@@ -67,12 +67,12 @@ function checkOAuthCallback() {
         state,
         expectedState: localStorage.getItem('oauth_state')
     });
-    
+
     if (error) {
         showError(`OAuth Error: ${error}`);
         return;
     }
-    
+
     if (code) {
         // Verify state parameter for CSRF protection
         const expectedState = localStorage.getItem('oauth_state');
@@ -80,7 +80,7 @@ function checkOAuthCallback() {
             showError('OAuth state mismatch - possible CSRF attack');
             return;
         }
-        
+
         console.log('📝 Authorization code received, exchanging for tokens...');
         showStep('step2');
         updateAuthStatus('connecting', 'Connecting...');
@@ -94,7 +94,7 @@ function checkExistingAuth() {
     const accessToken = localStorage.getItem('clover_access_token');
     const merchantId = localStorage.getItem('clover_merchant_id');
     const tokenExpires = localStorage.getItem('clover_token_expires');
-    
+
     if (accessToken && merchantId) {
         // Check if token is expired
         if (tokenExpires && Date.now() > parseInt(tokenExpires)) {
@@ -102,7 +102,7 @@ function checkExistingAuth() {
             attemptTokenRefresh();
             return;
         }
-        
+
         console.log('✅ Valid existing authentication found');
         showStep('step3');
         displayMerchantInfo({
@@ -120,22 +120,22 @@ function checkExistingAuth() {
 // Initiate OAuth v2 Flow per official documentation
 function initiateOAuth() {
     console.log('🚀 Starting Clover v2/OAuth flow...');
-    
+
     const state = generateRandomState();
     localStorage.setItem('oauth_state', state);
-    
+
     // Build the v2/OAuth authorization URL according to official Clover docs
     const authUrl = `${OAUTH_CONFIG.authUrl}?` +
         `client_id=${OAUTH_CONFIG.clientId}&` +
         `redirect_uri=${encodeURIComponent(OAUTH_CONFIG.redirectUri)}&` +
         `response_type=${OAUTH_CONFIG.responseType}&` +
         `state=${state}`;
-    
+
     console.log('🔗 v2/OAuth Authorization URL:', authUrl);
-    
+
     updateAuthStatus('connecting', 'Redirecting to Clover...');
     showToast('Redirecting to Clover for secure authentication...', 'info');
-    
+
     // Redirect to Clover v2/OAuth
     setTimeout(() => {
         window.location.href = authUrl;
@@ -146,7 +146,7 @@ function initiateOAuth() {
 async function exchangeCodeForToken(code, merchantId) {
     try {
         console.log('🔄 Exchanging code for v2/OAuth tokens...');
-        
+
         const response = await fetch('/api/oauth/token', {
             method: 'POST',
             headers: {
@@ -158,9 +158,9 @@ async function exchangeCodeForToken(code, merchantId) {
                 merchant_id: merchantId
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             console.log('✅ v2/OAuth token exchange successful:', {
                 hasAccessToken: !!data.access_token,
@@ -169,16 +169,16 @@ async function exchangeCodeForToken(code, merchantId) {
                 accessTokenExpiration: data.access_token_expiration,
                 refreshTokenExpiration: data.refresh_token_expiration
             });
-            
+
             // Store v2/OAuth tokens securely
             localStorage.setItem('clover_access_token', data.access_token);
             localStorage.setItem('clover_merchant_id', data.merchant_id || merchantId);
-            
+
             // Store refresh token (v2/OAuth feature)
             if (data.refresh_token) {
                 localStorage.setItem('clover_refresh_token', data.refresh_token);
             }
-            
+
             // Store token expiration times (Unix timestamps from v2/OAuth)
             if (data.access_token_expiration) {
                 localStorage.setItem('clover_token_expires', (data.access_token_expiration * 1000).toString());
@@ -186,26 +186,26 @@ async function exchangeCodeForToken(code, merchantId) {
             if (data.refresh_token_expiration) {
                 localStorage.setItem('clover_refresh_expires', (data.refresh_token_expiration * 1000).toString());
             }
-            
+
             // Get merchant info using new token
             const finalMerchantId = data.merchant_id || merchantId;
             const merchantData = await fetchMerchantInfo(data.access_token, finalMerchantId);
-            
+
             if (merchantData) {
                 localStorage.setItem('clover_merchant_name', merchantData.name);
                 localStorage.setItem('clover_merchant_currency', merchantData.currency);
-                
+
                 showStep('step3');
                 displayMerchantInfo(merchantData);
                 updateAuthStatus('connected', 'Connected');
                 showToast('Successfully connected with Clover v2/OAuth!', 'success');
-                
+
                 // Clean up OAuth state
                 localStorage.removeItem('oauth_state');
-                
+
                 // Clear URL parameters after successful authentication
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
+
                 // Setup automatic token refresh
                 setupTokenRefresh();
             } else {
@@ -214,7 +214,7 @@ async function exchangeCodeForToken(code, merchantId) {
         } else {
             throw new Error(data.error || 'v2/OAuth token exchange failed');
         }
-        
+
     } catch (error) {
         console.error('❌ OAuth v2 error:', error);
         showError(`Authentication failed: ${error.message}`);
@@ -227,18 +227,18 @@ async function exchangeCodeForToken(code, merchantId) {
 function setupTokenRefresh() {
     const tokenExpires = localStorage.getItem('clover_token_expires');
     const refreshToken = localStorage.getItem('clover_refresh_token');
-    
+
     if (!tokenExpires || !refreshToken) return;
-    
+
     const expirationTime = parseInt(tokenExpires);
     const currentTime = Date.now();
     const timeToExpiry = expirationTime - currentTime;
-    
+
     // Refresh token 5 minutes before expiration
     const refreshTime = Math.max(0, timeToExpiry - (5 * 60 * 1000));
-    
+
     console.log('⏰ Token refresh scheduled for:', new Date(currentTime + refreshTime));
-    
+
     setTimeout(() => {
         attemptTokenRefresh();
     }, refreshTime);
@@ -248,23 +248,23 @@ function setupTokenRefresh() {
 async function attemptTokenRefresh() {
     const refreshToken = localStorage.getItem('clover_refresh_token');
     const refreshExpires = localStorage.getItem('clover_refresh_expires');
-    
+
     if (!refreshToken) {
         console.log('⚠️ No refresh token available, need to re-authenticate');
         disconnect();
         return;
     }
-    
+
     // Check if refresh token is expired
     if (refreshExpires && Date.now() > parseInt(refreshExpires)) {
         console.log('⚠️ Refresh token expired, need to re-authenticate');
         disconnect();
         return;
     }
-    
+
     try {
         console.log('🔄 Refreshing access token using v2/OAuth...');
-        
+
         const response = await fetch('/api/oauth/refresh', {
             method: 'POST',
             headers: {
@@ -274,18 +274,18 @@ async function attemptTokenRefresh() {
                 refresh_token: refreshToken
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             console.log('✅ Token refresh successful');
-            
+
             // Update stored tokens
             localStorage.setItem('clover_access_token', data.access_token);
             if (data.refresh_token) {
                 localStorage.setItem('clover_refresh_token', data.refresh_token);
             }
-            
+
             // Update expiration times
             if (data.access_token_expiration) {
                 localStorage.setItem('clover_token_expires', (data.access_token_expiration * 1000).toString());
@@ -293,15 +293,15 @@ async function attemptTokenRefresh() {
             if (data.refresh_token_expiration) {
                 localStorage.setItem('clover_refresh_expires', (data.refresh_token_expiration * 1000).toString());
             }
-            
+
             // Schedule next refresh
             setupTokenRefresh();
-            
+
             showToast('Access token refreshed automatically', 'success');
         } else {
             throw new Error(data.error || 'Token refresh failed');
         }
-        
+
     } catch (error) {
         console.error('❌ Token refresh failed:', error);
         showToast('Session expired, please reconnect', 'warning');
@@ -313,16 +313,16 @@ async function attemptTokenRefresh() {
 async function fetchMerchantInfo(accessToken, merchantId) {
     try {
         console.log('📊 Fetching merchant info...');
-        
+
         const response = await fetch(`/api/merchant/${merchantId}`, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'X-Merchant-Id': merchantId
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             return {
                 id: data.merchant.id,
@@ -334,7 +334,7 @@ async function fetchMerchantInfo(accessToken, merchantId) {
         } else {
             throw new Error(data.error || 'Failed to fetch merchant info');
         }
-        
+
     } catch (error) {
         console.error('❌ Error fetching merchant info:', error);
         return null;
@@ -377,7 +377,7 @@ function displayMerchantInfo(merchant) {
 // Disconnect OAuth
 function disconnect() {
     console.log('🔌 Disconnecting OAuth session...');
-    
+
     // Clear all stored authentication data
     localStorage.removeItem('clover_access_token');
     localStorage.removeItem('clover_refresh_token');
@@ -387,7 +387,7 @@ function disconnect() {
     localStorage.removeItem('clover_token_expires');
     localStorage.removeItem('clover_refresh_expires');
     localStorage.removeItem('oauth_state');
-    
+
     showStep('step1');
     updateAuthStatus('disconnected', 'Disconnected');
     showToast('Successfully disconnected from Clover', 'info');
@@ -413,7 +413,7 @@ function showError(message) {
 // Update authentication status
 function updateAuthStatus(status, message) {
     if (!authStatus) return;
-    
+
     authStatus.className = `status-indicator ${status}`;
     authStatus.innerHTML = `
         <i class="fas ${getStatusIcon(status)}"></i>
@@ -433,8 +433,8 @@ function getStatusIcon(status) {
 
 // Generate random state for OAuth security
 function generateRandomState() {
-    return btoa(String.fromCharCode.apply(null, 
-        new Uint8Array(Array.from({length: 32}, () => Math.floor(Math.random() * 256)))
+    return btoa(String.fromCharCode.apply(null,
+        new Uint8Array(Array.from({ length: 32 }, () => Math.floor(Math.random() * 256)))
     )).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
 }
 
@@ -446,9 +446,9 @@ function showToast(message, type = 'info') {
         <i class="fas ${getToastIcon(type)}"></i>
         <span>${message}</span>
     `;
-    
+
     toastContainer.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.remove();
     }, 5000);
@@ -468,8 +468,8 @@ function getToastIcon(type) {
 // Export authentication status for other pages
 window.CloverAuth = {
     isAuthenticated: () => {
-        return localStorage.getItem('clover_access_token') && 
-               localStorage.getItem('clover_merchant_id');
+        return localStorage.getItem('clover_access_token') &&
+            localStorage.getItem('clover_merchant_id');
     },
     getAccessToken: () => localStorage.getItem('clover_access_token'),
     getMerchantId: () => localStorage.getItem('clover_merchant_id'),

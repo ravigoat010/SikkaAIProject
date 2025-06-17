@@ -165,9 +165,12 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -687,6 +690,17 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.transaction-item.refund-item {
+    background: rgba(255, 248, 240, 0.9);
+    border-left: 4px solid #ff6b35;
+    cursor: default;
+}
+
+.transaction-item.refund-item:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 .transaction-header {
     display: flex;
     justify-content: space-between;
@@ -734,6 +748,20 @@ body {
 .transaction-amount {
     font-weight: 600;
     color: #333;
+}
+
+.transaction-amount.refund-amount {
+    color: #ff6b35;
+}
+
+.transaction-type {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(103, 126, 234, 0.1);
+    color: #667eea;
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .transaction-order {
@@ -815,6 +843,7 @@ body {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -910,4 +939,173 @@ body {
         align-items: flex-start;
         gap: 4px;
     }
-} 
+}
+
+/* Popup Styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.popup-content {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.popup-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.popup-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.2s ease;
+}
+
+.popup-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.popup-body {
+    padding: 25px;
+}
+
+.popup-body p {
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 1rem;
+}
+
+.refund-details {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.refund-details .detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.refund-details .detail-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.refund-details .detail-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.refund-details .detail-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.popup-footer {
+    display: flex;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+}
+
+.popup-footer .btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.popup-footer .btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.popup-footer .btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.popup-footer .btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.popup-footer .btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.popup-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Make transaction items clickable */
+.transaction-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.transaction-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}

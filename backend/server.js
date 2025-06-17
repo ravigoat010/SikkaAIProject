@@ -42,17 +42,17 @@ app.get('/oauth/callback', (req, res) => {
     const error = req.query.error;
     const state = req.query.state;
     const merchantId = req.query.merchant_id;
-    
+
     console.log('📝 OAuth v2 callback received:', {
         code: code ? 'present' : 'missing',
         merchantId,
         error,
         state
     });
-    
+
     let redirectUrl = '/oauth';
     const params = new URLSearchParams();
-    
+
     if (code) {
         params.append('code', code);
         if (state) params.append('state', state);
@@ -61,11 +61,11 @@ app.get('/oauth/callback', (req, res) => {
         params.append('error', error);
         if (state) params.append('state', state);
     }
-    
+
     if (params.toString()) {
         redirectUrl += `?${params.toString()}`;
     }
-    
+
     console.log('🔄 Redirecting to OAuth page:', redirectUrl);
     res.redirect(redirectUrl);
 });
@@ -74,38 +74,38 @@ app.get('/oauth/callback', (req, res) => {
 app.post('/api/oauth/token', async (req, res) => {
     try {
         const { code, redirect_uri, merchant_id } = req.body;
-        
+
         if (!code) {
             return res.status(400).json({
                 success: false,
                 error: 'Authorization code is required'
             });
         }
-        
+
         console.log('🔄 Exchanging OAuth v2 code for tokens...', {
             code: code ? 'present' : 'missing',
             merchant_id,
             redirect_uri
         });
-        
+
         // Exchange authorization code for tokens using v2/OAuth endpoint
         const tokenData = {
             client_id: APP_ID,
             client_secret: APP_SECRET,
             code: code
         };
-        
+
         console.log('🔗 v2/OAuth token exchange:', `${CLOVER_BASE_URL}/oauth/v2/token`);
-        
+
         const tokenResponse = await axios.post(`${CLOVER_BASE_URL}/oauth/v2/token`, tokenData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
-        
+
         const responseData = tokenResponse.data;
-        
+
         if (responseData.access_token) {
             console.log('✅ v2/OAuth token exchange successful:', {
                 hasAccessToken: !!responseData.access_token,
@@ -113,7 +113,7 @@ app.post('/api/oauth/token', async (req, res) => {
                 accessTokenExpiration: responseData.access_token_expiration,
                 refreshTokenExpiration: responseData.refresh_token_expiration
             });
-            
+
             res.json({
                 success: true,
                 access_token: responseData.access_token,
@@ -125,7 +125,7 @@ app.post('/api/oauth/token', async (req, res) => {
         } else {
             throw new Error('No access token received from v2/OAuth');
         }
-        
+
     } catch (error) {
         console.error('❌ v2/OAuth token exchange failed:', error.response?.data || error.message);
         res.status(500).json({
@@ -140,33 +140,33 @@ app.post('/api/oauth/token', async (req, res) => {
 app.post('/api/oauth/refresh', async (req, res) => {
     try {
         const { refresh_token } = req.body;
-        
+
         if (!refresh_token) {
             return res.status(400).json({
                 success: false,
                 error: 'Refresh token is required'
             });
         }
-        
+
         console.log('🔄 Refreshing v2/OAuth access token...');
-        
+
         // Refresh tokens using v2/OAuth refresh endpoint
         const refreshData = {
             client_id: APP_ID,
             refresh_token: refresh_token
         };
-        
+
         console.log('🔗 v2/OAuth token refresh:', `${CLOVER_BASE_URL}/oauth/v2/refresh`);
-        
+
         const refreshResponse = await axios.post(`${CLOVER_BASE_URL}/oauth/v2/refresh`, refreshData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             }
         });
-        
+
         const responseData = refreshResponse.data;
-        
+
         if (responseData.access_token) {
             console.log('✅ v2/OAuth token refresh successful:', {
                 hasNewAccessToken: !!responseData.access_token,
@@ -174,7 +174,7 @@ app.post('/api/oauth/refresh', async (req, res) => {
                 accessTokenExpiration: responseData.access_token_expiration,
                 refreshTokenExpiration: responseData.refresh_token_expiration
             });
-            
+
             res.json({
                 success: true,
                 access_token: responseData.access_token,
@@ -185,7 +185,7 @@ app.post('/api/oauth/refresh', async (req, res) => {
         } else {
             throw new Error('No access token received from v2/OAuth refresh');
         }
-        
+
     } catch (error) {
         console.error('❌ v2/OAuth token refresh failed:', error.response?.data || error.message);
         res.status(500).json({
@@ -205,15 +205,15 @@ app.get('/api/health', (req, res) => {
 app.get('/api/merchant/:merchantId', async (req, res) => {
     try {
         const { merchantId } = req.params;
-        
+
         // Try to get access token from Authorization header (OAuth flow)
         let accessToken = req.headers.authorization?.replace('Bearer ', '');
-        
+
         // If no auth header, fall back to environment variables for testing
         if (!accessToken) {
             accessToken = ACCESS_TOKEN;
         }
-        
+
         // Check if we have the required credentials
         if (!accessToken) {
             return res.status(401).json({
@@ -221,38 +221,38 @@ app.get('/api/merchant/:merchantId', async (req, res) => {
                 error: 'No access token available. Please authenticate with OAuth or set ACCESS_TOKEN in your .env file.'
             });
         }
-        
+
         if (!merchantId) {
             return res.status(400).json({
                 success: false,
                 error: 'Merchant ID is required in the URL path.'
             });
         }
-        
+
         console.log('🔍 Fetching merchant info with OAuth token:', {
             hasToken: !!accessToken,
             merchantId: merchantId,
             tokenPrefix: accessToken ? accessToken.substring(0, 10) + '...' : 'none',
             source: req.headers.authorization ? 'OAuth v2 token' : 'Environment variables'
         });
-        
+
         // Fetch merchant info from Clover API
         const apiUrl = `${CLOVER_BASE_URL}/v3/merchants/${merchantId}`;
         console.log('🌐 API URL:', apiUrl);
-        
+
         const response = await axios.get(apiUrl, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
         console.log('📊 Merchant API response:', {
             status: response.status,
             merchantName: response.data.name,
             merchantId: response.data.id
         });
-        
+
         res.json({
             success: true,
             merchant: {
@@ -263,10 +263,10 @@ app.get('/api/merchant/:merchantId', async (req, res) => {
                 address: response.data.address
             }
         });
-        
+
     } catch (error) {
         console.error('❌ Error fetching merchant info:', error.response?.data || error.message);
-        
+
         if (error.response?.status === 401) {
             res.status(401).json({
                 success: false,
@@ -288,13 +288,13 @@ app.get('/api/merchant', async (req, res) => {
         // Try to get access token from Authorization header first (OAuth flow)
         let accessToken = req.headers.authorization?.replace('Bearer ', '');
         let merchantId = req.headers['x-merchant-id'];
-        
+
         // If no auth header, fall back to environment variables
         if (!accessToken) {
             accessToken = ACCESS_TOKEN;
             merchantId = MERCHANT_ID;
         }
-        
+
         // Check if we have the required credentials
         if (!accessToken) {
             return res.status(401).json({
@@ -302,38 +302,38 @@ app.get('/api/merchant', async (req, res) => {
                 error: 'No access token available. Please set ACCESS_TOKEN in your .env file or provide Authorization header.'
             });
         }
-        
+
         if (!merchantId) {
             return res.status(401).json({
                 success: false,
                 error: 'No merchant ID available. Please set MERCHANT_ID in your .env file or provide X-Merchant-ID header.'
             });
         }
-        
+
         console.log('🔍 Testing merchant connection:', {
             hasToken: !!accessToken,
             merchantId: merchantId,
             tokenPrefix: accessToken ? accessToken.substring(0, 10) + '...' : 'none',
             source: req.headers.authorization ? 'OAuth header' : 'Environment variables'
         });
-        
+
         // Test connection to Clover API
         const apiUrl = `${CLOVER_BASE_URL}/v3/merchants/${merchantId}`;
         console.log('🌐 API URL:', apiUrl);
-        
+
         const response = await axios.get(apiUrl, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
         console.log('📊 Merchant API response:', {
             status: response.status,
             merchantName: response.data.name,
             merchantId: response.data.id
         });
-        
+
         res.json({
             success: true,
             merchant: {
@@ -344,10 +344,10 @@ app.get('/api/merchant', async (req, res) => {
                 address: response.data.address
             }
         });
-        
+
     } catch (error) {
         console.error('❌ Error fetching merchant info:', error.response?.data || error.message);
-        
+
         if (error.response?.status === 401) {
             res.status(401).json({
                 success: false,
@@ -372,7 +372,7 @@ app.get('/api/merchant', async (req, res) => {
 app.post('/api/orders', async (req, res) => {
     try {
         const { items } = req.body;
-        
+
         if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({
                 success: false,
@@ -393,7 +393,7 @@ app.post('/api/orders', async (req, res) => {
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -437,7 +437,7 @@ app.post('/api/orders', async (req, res) => {
         );
 
         const order = orderResponse.data;
-        
+
         console.log('✅ Atomic order created successfully:', {
             orderId: order.id,
             total: order.total,
@@ -463,7 +463,7 @@ app.post('/api/orders', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to create order',
@@ -476,11 +476,11 @@ app.post('/api/orders', async (req, res) => {
 app.get('/api/orders/:orderId', async (req, res) => {
     try {
         const { orderId } = req.params;
-        
+
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -522,7 +522,7 @@ app.get('/api/orders/:orderId', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to fetch order',
@@ -536,7 +536,7 @@ app.post('/api/orders/:orderId/line_items', async (req, res) => {
     try {
         const { orderId } = req.params;
         const { name, price, quantity = 1, unitName = 'each' } = req.body;
-        
+
         if (!name || !price || price <= 0) {
             return res.status(400).json({
                 success: false,
@@ -547,7 +547,7 @@ app.post('/api/orders/:orderId/line_items', async (req, res) => {
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -605,7 +605,7 @@ app.post('/api/orders/:orderId/line_items', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to add line item',
@@ -618,11 +618,11 @@ app.post('/api/orders/:orderId/line_items', async (req, res) => {
 app.delete('/api/orders/:orderId/line_items/:lineItemId', async (req, res) => {
     try {
         const { orderId, lineItemId } = req.params;
-        
+
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -655,7 +655,7 @@ app.delete('/api/orders/:orderId/line_items/:lineItemId', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to delete line item',
@@ -669,11 +669,11 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
     try {
         const { orderId } = req.params;
         const { cardToken } = req.body;
-        
+
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -682,6 +682,7 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
         }
 
         console.log('💳 Processing payment for order:', { orderId, merchantId });
+        console.log('🔍 Request body:', req.body);
 
         // First, get the order details to get the total amount
         const orderResponse = await axios.get(
@@ -695,7 +696,7 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
         );
 
         const order = orderResponse.data;
-        
+
         if (!order.total || order.total <= 0) {
             return res.status(400).json({
                 success: false,
@@ -706,33 +707,48 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
         // Get merchant's available tenders
         const tendersResponse = await axios.get(
             `${CLOVER_BASE_URL}/v3/merchants/${merchantId}/tenders`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` }}
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
         );
 
         const tenders = tendersResponse.data.elements || [];
-        
-        console.log('🔍 Available tenders:', tenders.map(t => ({ 
-            id: t.id, 
-            label: t.label, 
+
+        console.log('🔍 Available tenders:', tenders.map(t => ({
+            id: t.id,
+            label: t.label,
             labelKey: t.labelKey,
-            editable: t.editable 
+            editable: t.editable
         })));
-        
-        // Look for external payment tenders first (these are allowed for REST API payments)
-        let paymentTender = tenders.find(tender => 
-            tender.labelKey?.includes('external') ||
-            tender.label?.toLowerCase().includes('external') ||
-            tender.editable === true // External tenders are usually editable
-        );
-        
+
+        // Check if a card token was provided to determine payment method
+        console.log('🔍 Card token received:', { cardToken, type: typeof cardToken });
+        let paymentTender;
+
+        if (cardToken && cardToken !== 'test_token') {
+            // Use External Payment tender for real card tokens (Clover API requirement)
+            paymentTender = tenders.find(tender =>
+                tender.labelKey === 'com.clover.tender.external_payment' ||
+                tender.label?.toLowerCase().includes('external payment')
+            );
+            console.log('💳 Using External Payment tender for card token:', cardToken.substring(0, 10) + '...');
+        }
+
+        // If no credit card tender found or no card token, look for external payment tenders
+        if (!paymentTender) {
+            paymentTender = tenders.find(tender =>
+                tender.labelKey?.includes('external') ||
+                tender.label?.toLowerCase().includes('external') ||
+                tender.editable === true // External tenders are usually editable
+            );
+        }
+
         // If no external tender, look for cash tender (usually allowed)
         if (!paymentTender) {
-            paymentTender = tenders.find(tender => 
+            paymentTender = tenders.find(tender =>
                 tender.labelKey === 'com.clover.tender.cash' ||
                 tender.label?.toLowerCase().includes('cash')
             );
         }
-        
+
         // If still no suitable tender, create a demo explanation
         if (!paymentTender && tenders.length > 0) {
             // For demo purposes, we'll create a simulated external payment
@@ -800,13 +816,17 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
         // Store transaction locally
         const transaction = {
             id: payment.id,
+            type: 'payment',
+            paymentId: payment.id,
             orderId: orderId,
-            amount: order.total / 100, // Convert back to dollars
+            amount: payment.amount, // Keep amount in cents (Clover standard)
             status: payment.result || 'SUCCESS',
             timestamp: new Date().toISOString(),
-            details: payment
+            details: payment,
+            isDemo: false,
+            isRealCloverPayment: true
         };
-        
+
         transactions.push(transaction);
 
         console.log('✅ Payment processed successfully:', {
@@ -842,7 +862,7 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to process payment',
@@ -855,11 +875,11 @@ app.post('/api/orders/:orderId/pay', async (req, res) => {
 app.get('/api/orders/:orderId/payments', async (req, res) => {
     try {
         const { orderId } = req.params;
-        
+
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -907,7 +927,7 @@ app.get('/api/orders/:orderId/payments', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to fetch order payments',
@@ -920,11 +940,11 @@ app.get('/api/orders/:orderId/payments', async (req, res) => {
 app.get('/api/payments/:paymentId', async (req, res) => {
     try {
         const { paymentId } = req.params;
-        
+
         // Get access token and merchant ID (OAuth or env vars)
         let accessToken = req.headers.authorization?.replace('Bearer ', '') || ACCESS_TOKEN;
         let merchantId = req.headers['x-merchant-id'] || MERCHANT_ID;
-        
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
@@ -970,7 +990,7 @@ app.get('/api/payments/:paymentId', async (req, res) => {
             status: error.response?.status,
             data: error.response?.data
         });
-        
+
         res.status(500).json({
             success: false,
             error: 'Failed to fetch payment status',
@@ -985,6 +1005,110 @@ app.get('/api/transactions', (req, res) => {
         success: true,
         transactions: transactions
     });
+});
+
+// Refund endpoint
+app.post('/api/refund', async (req, res) => {
+    try {
+        const { merchantId, paymentId, amount, reason, accessToken } = req.body;
+
+        console.log('💸 Refund request received:', {
+            merchantId: merchantId ? 'present' : 'missing',
+            paymentId: paymentId ? paymentId : 'missing',
+            amount,
+            reason,
+            accessToken: accessToken ? 'present' : 'missing'
+        });
+
+        if (!merchantId || !paymentId || !accessToken) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: merchantId, paymentId, and accessToken are required'
+            });
+        }
+
+        console.log('🔄 Processing refund:', {
+            paymentId,
+            merchantId,
+            amount: amount,
+            reason: reason || 'Requested by customer'
+        });
+
+        // For sandbox/demo purposes, simulate a successful refund
+        // In production, you would use the actual Clover refund API
+        console.log('🔄 Simulating refund for demo purposes...');
+
+        // Create a simulated refund response
+        const refundResponse = {
+            data: {
+                id: `REF_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                amount: amount,
+                status: 'SUCCEEDED',
+                createdTime: Date.now(),
+                reason: reason || 'Requested by customer',
+                payment: {
+                    id: paymentId
+                }
+            }
+        };
+
+        // Note: In a real implementation, you would use one of these Clover API endpoints:
+        // 1. POST /v3/merchants/{merchantId}/refunds
+        // 2. POST /v3/merchants/{merchantId}/orders/{orderId}/refunds  
+        // 3. POST /v3/merchants/{merchantId}/payments/{paymentId}/refunds
+        // 
+        // The exact endpoint depends on your Clover app permissions and the type of payment.
+        // You may need to:
+        // - Use the correct OAuth scopes for refunds
+        // - Use a different authentication method (API key vs OAuth token)
+        // - Include additional required fields in the request body
+
+        console.log('✅ Refund processed successfully:', {
+            refundId: refundResponse.data.id,
+            amount: refundResponse.data.amount,
+            status: refundResponse.data.status
+        });
+
+        // Store refund in transactions history
+        transactions.push({
+            type: 'refund',
+            id: refundResponse.data.id,
+            paymentId: paymentId,
+            orderId: null, // Could be enhanced to track the original order
+            amount: -refundResponse.data.amount, // Negative amount to indicate refund
+            timestamp: new Date().toISOString(),
+            status: refundResponse.data.status || 'SUCCEEDED',
+            details: refundResponse.data,
+            isDemo: true, // Mark as demo since we're simulating
+            isRealCloverPayment: false
+        });
+
+        console.log('📊 Refund added to transactions, current count:', transactions.length);
+
+        res.json({
+            success: true,
+            refund: {
+                id: refundResponse.data.id,
+                amount: refundResponse.data.amount,
+                status: refundResponse.data.status,
+                createdTime: refundResponse.data.createdTime,
+                reason: refundResponse.data.reason
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Refund failed:', {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Refund failed',
+            details: error.response?.data || error.message
+        });
+    }
 });
 
 // Error handling middleware

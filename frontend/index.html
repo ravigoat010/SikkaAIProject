@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,13 +8,14 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header class="header">
             <div class="header-content">
                 <h1><i class="fas fa-credit-card"></i> Clover Payment Gateway</h1>
                 <p>Complete atomic orders workflow with OAuth2 authentication</p>
-                
+
                 <!-- Authentication Status -->
                 <div class="auth-section">
                     <div class="status-indicator" id="connectionStatus">
@@ -42,7 +44,7 @@
                         <h2><i class="fas fa-shopping-cart"></i> Create Order</h2>
                         <p>Add line items to create a new order</p>
                     </div>
-                    
+
                     <!-- Add Line Item Form -->
                     <div class="line-item-form">
                         <h3><i class="fas fa-plus"></i> Add Line Item</h3>
@@ -53,42 +55,24 @@
                                         <i class="fas fa-tag"></i>
                                         Item Name
                                     </label>
-                                    <input 
-                                        type="text" 
-                                        id="itemName" 
-                                        name="itemName" 
-                                        placeholder="e.g., Coffee, Burger, T-Shirt"
-                                        required
-                                    >
+                                    <input type="text" id="itemName" name="itemName"
+                                        placeholder="e.g., Coffee, Burger, T-Shirt" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="itemPrice">
                                         <i class="fas fa-dollar-sign"></i>
                                         Price (USD)
                                     </label>
-                                    <input 
-                                        type="number" 
-                                        id="itemPrice" 
-                                        name="itemPrice" 
-                                        step="0.01" 
-                                        min="0.01" 
-                                        placeholder="0.00"
-                                        required
-                                    >
+                                    <input type="number" id="itemPrice" name="itemPrice" step="0.01" min="0.01"
+                                        placeholder="0.00" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="itemQuantity">
                                         <i class="fas fa-hashtag"></i>
                                         Quantity
                                     </label>
-                                    <input 
-                                        type="number" 
-                                        id="itemQuantity" 
-                                        name="itemQuantity" 
-                                        min="1" 
-                                        value="1"
-                                        required
-                                    >
+                                    <input type="number" id="itemQuantity" name="itemQuantity" min="1" value="1"
+                                        required>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-secondary">
@@ -133,7 +117,7 @@
                         <h2><i class="fas fa-file-invoice"></i> Order Details</h2>
                         <p>Review your order and proceed to payment</p>
                     </div>
-                    
+
                     <div id="orderDetails" class="order-details">
                         <!-- Order details will be populated here -->
                     </div>
@@ -147,12 +131,8 @@
                                     <i class="fas fa-credit-card"></i>
                                     Card Token (Test)
                                 </label>
-                                <input 
-                                    type="text" 
-                                    id="cardToken" 
-                                    name="cardToken" 
-                                    placeholder="Leave empty for test token"
-                                >
+                                <input type="text" id="cardToken" name="cardToken"
+                                    placeholder="Leave empty for test token">
                                 <small class="form-help">
                                     For testing, leave empty to use default test token
                                 </small>
@@ -177,7 +157,7 @@
                             Refresh Status
                         </button>
                     </div>
-                    
+
                     <div id="paymentStatus" class="status-content">
                         <div class="status-placeholder">
                             <i class="fas fa-clock"></i>
@@ -197,7 +177,7 @@
                             Refresh
                         </button>
                     </div>
-                    
+
                     <div id="transactionHistory" class="history-content">
                         <div class="status-placeholder">
                             <i class="fas fa-receipt"></i>
@@ -218,8 +198,40 @@
 
         <!-- Toast Notifications -->
         <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Refund Popup -->
+        <div id="refundPopup" class="popup-overlay" style="display: none;">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h3><i class="fas fa-undo"></i> Refund Transaction</h3>
+                    <button class="popup-close" onclick="closeRefundPopup()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="popup-body">
+                    <p>Are you sure you want to refund this transaction?</p>
+                    <div class="refund-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Transaction ID:</span>
+                            <span class="detail-value" id="refundTransactionId"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Amount:</span>
+                            <span class="detail-value" id="refundAmount"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="popup-footer">
+                    <button class="btn btn-secondary" onclick="closeRefundPopup()">Cancel</button>
+                    <button class="btn btn-danger" id="confirmRefundBtn" onclick="processRefund()">
+                        <i class="fas fa-undo"></i> Refund
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
-</html> 
+
+</html>

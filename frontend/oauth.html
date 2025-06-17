@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -251,18 +252,35 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Responsive design */
@@ -283,6 +301,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="oauth-container">
         <div class="oauth-header">
@@ -365,7 +384,7 @@
         <!-- Footer Information -->
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
             <p style="color: #6c757d; font-size: 14px;">
-                <i class="fas fa-lock"></i> Secured by Clover OAuth 2.0 | 
+                <i class="fas fa-lock"></i> Secured by Clover OAuth 2.0 |
                 <a href="index.html" style="color: #3498db; text-decoration: none;">← Back to Payment Gateway</a>
             </p>
         </div>
@@ -377,4 +396,5 @@
     <!-- Load OAuth JavaScript -->
     <script src="oauth.js"></script>
 </body>
-</html> 
+
+</html>
